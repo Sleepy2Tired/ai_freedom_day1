@@ -1,6 +1,7 @@
 from pathlib import Path
 from dotenv import dotenv_values
 from openai import OpenAI
+from datetime import datetime
 
 # Load API key from .env
 ENV_PATH = Path(__file__).parent / ".env"
@@ -10,22 +11,33 @@ assert api_key.startswith("sk-"), "OPENAI_API_KEY missing/invalid in .env"
 client = OpenAI(api_key=api_key)
 
 def motivate(prompt: str):
-    """Send a custom motivational request to the AI and return response."""
+    """Generate motivation + 3 action steps."""
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a powerful motivator. Be short, punchy, and inspiring."},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": "You are a motivator + productivity coach. Keep it short, punchy, and practical."},
+            {"role": "user", "content": f"Motivate me and give me 3 action steps for: {prompt}"}
         ],
         temperature=0.8,
-        max_tokens=120
+        max_tokens=200
     )
     return resp.choices[0].message.content.strip()
 
 if __name__ == "__main__":
+    logs_path = Path(__file__).parent / "daily_log.txt"
+    print("\n📓 Daily Journal & Motivation Logger")
     while True:
-        user_input = input("\n🔥 Enter a situation you need motivation for (or type 'exit' to quit): ")
+        user_input = input("\n📝 What’s on your mind? (or 'exit' to quit): ")
         if user_input.lower() in ["exit", "quit", "q"]:
-            print("👊 Stay strong. Session ended.")
+            print("👊 Session ended. Keep pushing forward.")
             break
-        print("\n⚡ Your motivation:\n", motivate(user_input))
+
+        result = motivate(user_input)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        log_entry = f"\n[{timestamp}] INPUT: {user_input}\n{result}\n"
+        with open(logs_path, "a", encoding="utf-8") as f:
+            f.write(log_entry)
+
+        print("\n⚡ Your motivation:\n", result)
+        print(f"\n✅ Saved to {logs_path}")
